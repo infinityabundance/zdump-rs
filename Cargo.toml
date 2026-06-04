@@ -1,0 +1,27 @@
+[package]
+name = "zdump-rs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "A bounded, independent Rust TZif witness/inspection companion to zic-rs — reads TZif and renders offset/is_dst/abbreviation at explicit instants as deterministic JSON. NOT a full zdump replacement."
+license = "Apache-2.0"
+repository = "https://github.com/infinityabundance/zdump-rs"
+homepage = "https://github.com/infinityabundance/zdump-rs"
+authors = ["infinityabundance"]
+keywords = ["tzif", "timezone", "zdump", "rfc9636", "witness"]
+categories = ["date-and-time", "command-line-utilities"]
+
+# Deliberately ZERO dependencies (matches the zic-rs restraint doctrine): the TZif reader, the civil-time
+# arithmetic, the argument parsing, and the JSON emitter are all hand-rolled. An independent reader with
+# no shared code with zic-rs is the point — it is a second implementation, used as a cross-check.
+
+[[bin]]
+name = "zdump-rs"
+path = "src/main.rs"
+
+[lib]
+name = "zdump_rs"
+path = "src/lib.rs"
+
+[profile.release]
+overflow-checks = true
