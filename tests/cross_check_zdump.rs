@@ -78,8 +78,10 @@ fn cross_check(zone: &str) {
     let tzif = format!("fixtures/{zone}.tzif");
     // zdump treats a bare arg as a zone NAME relative to TZDIR; an absolute path makes it read our file.
     let abs = std::fs::canonicalize(&tzif).expect("canonicalize fixture");
+    // window stretches to 2201 so the far-future probes exercise FOOTER PROJECTION (zdump derives those
+    // far-future lines from the POSIX footer too — so agreement validates our footer interpreter).
     let out = Command::new("zdump")
-        .args(["-v", "-c", "1902,2037"])
+        .args(["-v", "-c", "1902,2201"])
         .arg(&abs)
         .output()
         .expect("run zdump");
@@ -91,7 +93,8 @@ fn cross_check(zone: &str) {
     let bytes = std::fs::read(&tzif).unwrap();
     let z = parse(&bytes).unwrap();
 
-    // probe instants strictly inside the window, away from transition seconds
+    // probe instants away from transition seconds; the last two are FAR beyond any explicit transition,
+    // so zdump-rs must match by footer projection, not the explicit table.
     let probes = [
         "1933-06-01T12:00:00Z",
         "1970-01-01T00:00:00Z",
@@ -99,11 +102,12 @@ fn cross_check(zone: &str) {
         "2026-01-15T00:00:00Z",
         "2026-07-15T00:00:00Z",
         "2030-02-01T00:00:00Z",
+        "2200-01-15T00:00:00Z", // footer-projected
+        "2200-07-15T00:00:00Z", // footer-projected
     ];
     let mut compared = 0;
     for p in probes {
         let t = parse_iso_utc(p).unwrap();
-        // latest zdump sample at-or-before t
         let Some(s) = samples.iter().rev().find(|s| s.0 <= t) else {
             continue;
         };
@@ -122,19 +126,24 @@ fn cross_check(zone: &str) {
         compared += 1;
     }
     assert!(
-        compared >= 3,
+        compared >= 4,
         "{zone}: too few probes compared ({compared})"
     );
-    eprintln!("cross_check {zone}: {compared} probe instants matched reference zdump");
+    eprintln!("cross_check {zone}: {compared} probe instants matched reference zdump (incl. footer-projected)");
 }
 
 #[test]
 fn matches_reference_zdump_or_skips() {
     if !zdump_available() {
-        eprintln!("SKIP: reference `zdump` not found on PATH (oracle unavailable) — golden test still pins output");
+        eprintln!("SKIP: reference `zdump` not found on PATH (oracle unavailable) — golden tests still pin output");
         return;
     }
+    // posix/ zones (footer projection exercised at 2200)
     cross_check("America_New_York");
     cross_check("Europe_London");
     cross_check("UTC");
+    cross_check("America_Vancouver");
+    // right/ (leap) zones — offset/is_dst/abbr are leap-independent, must still match reference zdump
+    cross_check("right_America_New_York");
+    cross_check("right_Europe_London");
 }

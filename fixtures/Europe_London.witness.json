@@ -7,5 +7,5 @@
   {"zone_file":"fixtures/Europe_London.tzif","at_utc":"2026-07-01T00:00:00Z","at_unix":1782864000,"utoff_seconds":3600,"is_dst":true,"abbr":"BST","beyond_explicit_transitions":false},
   {"zone_file":"fixtures/Europe_London.tzif","at_utc":"2038-01-19T03:14:07Z","at_unix":2147483647,"utoff_seconds":0,"is_dst":false,"abbr":"GMT","beyond_explicit_transitions":true},
   {"zone_file":"fixtures/Europe_London.tzif","at_utc":"2100-01-01T00:00:00Z","at_unix":4102444800,"utoff_seconds":0,"is_dst":false,"abbr":"GMT","beyond_explicit_transitions":true},
-  {"zone_file":"fixtures/Europe_London.tzif","at_utc":"2200-07-01T12:00:00Z","at_unix":7273800000,"utoff_seconds":0,"is_dst":false,"abbr":"GMT","beyond_explicit_transitions":true}
+  {"zone_file":"fixtures/Europe_London.tzif","at_utc":"2200-07-01T12:00:00Z","at_unix":7273800000,"utoff_seconds":3600,"is_dst":true,"abbr":"BST","beyond_explicit_transitions":true}
 ]

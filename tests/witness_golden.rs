@@ -43,6 +43,63 @@ fn golden_utc() {
 }
 
 #[test]
+fn golden_vancouver() {
+    // the zone that actually changed in the real 2026a->2026b release-diff
+    check("America_Vancouver");
+}
+
+#[test]
+fn golden_right_zones() {
+    // right/ (leap) profile fixtures — offset/is_dst/abbr are leap-independent, so the witness rows pin
+    check("right_America_New_York");
+    check("right_Europe_London");
+    check("right_Etc_UTC");
+}
+
+#[test]
+fn golden_transitions_new_york() {
+    let golden = std::fs::read_to_string("fixtures/America_New_York.transitions.json").unwrap();
+    let bytes = std::fs::read("fixtures/America_New_York.tzif").unwrap();
+    let z = parse(&bytes).unwrap();
+    let lo = zdump_rs::civil::days_from_civil(2035, 1, 1) * 86400;
+    let hi = zdump_rs::civil::days_from_civil(2038, 1, 1) * 86400;
+    let trs = z.transitions_in(lo, hi);
+    // reproduce main's transitions JSON shell for the same window
+    let mut s = format!(
+        "{{\"zone_file\":{:?},\"from_year\":2035,\"to_year\":2037,\"footer\":{:?},\"transitions\":[\n",
+        "fixtures/America_New_York.tzif",
+        z.footer.as_deref().unwrap()
+    );
+    for (k, tr) in trs.iter().enumerate() {
+        let comma = if k + 1 < trs.len() { "," } else { "" };
+        s.push_str(&format!(
+            "  {}{comma}\n",
+            zdump_rs::witness::transition_to_json("fixtures/America_New_York.tzif", tr)
+        ));
+    }
+    s.push_str("]}\n");
+    assert_eq!(s, golden, "transitions golden drifted");
+}
+
+#[test]
+fn right_utc_exposes_27_plus_leaps() {
+    let bytes = std::fs::read("fixtures/right_Etc_UTC.tzif").unwrap();
+    let z = parse(&bytes).unwrap();
+    assert!(
+        z.leaps.len() >= 27,
+        "right/UTC should carry the full leap table, got {}",
+        z.leaps.len()
+    );
+    // corrections are cumulative and monotonically increasing
+    for w in z.leaps.windows(2) {
+        assert!(
+            w[1].corr >= w[0].corr && w[1].occur > w[0].occur,
+            "leap table not monotonic"
+        );
+    }
+}
+
+#[test]
 fn utc_is_always_zero_offset() {
     let bytes = std::fs::read("fixtures/UTC.tzif").unwrap();
     let z = parse(&bytes).unwrap();

@@ -70,6 +70,51 @@ impl WitnessRow {
     }
 }
 
+use crate::tzif::TransitionRow;
+
+/// One transition rendered as a JSON object (the `zdump -v` analog). Field order fixed for determinism.
+pub fn transition_to_json(zone_file: &str, tr: &TransitionRow) -> String {
+    let obs = |o: &crate::tzif::Observation| {
+        format!(
+            "{{\"utoff_seconds\":{},\"is_dst\":{},\"abbr\":{}}}",
+            o.utoff,
+            o.is_dst,
+            json_str(&o.abbr)
+        )
+    };
+    format!(
+        "{{\"zone_file\":{},\"at_utc\":{},\"at_unix\":{},\"before\":{},\"after\":{}}}",
+        json_str(zone_file),
+        json_str(&format_iso_utc(tr.at)),
+        tr.at,
+        obs(&tr.before),
+        obs(&tr.after),
+    )
+}
+
+/// One transition as a human line.
+pub fn transition_to_text(tr: &TransitionRow) -> String {
+    let fmt = |o: &crate::tzif::Observation| {
+        let s = if o.utoff < 0 { '-' } else { '+' };
+        let a = o.utoff.unsigned_abs();
+        format!(
+            "UT{}{:02}:{:02}:{:02} isdst={} {}",
+            s,
+            a / 3600,
+            (a % 3600) / 60,
+            a % 60,
+            if o.is_dst { 1 } else { 0 },
+            o.abbr
+        )
+    };
+    format!(
+        "{}  {}  ->  {}",
+        format_iso_utc(tr.at),
+        fmt(&tr.before),
+        fmt(&tr.after)
+    )
+}
+
 /// Render a slice of rows as a stable, pretty JSON array (the witness artifact). Shared by the CLI and the
 /// golden test so the committed goldens and the live output never diverge.
 pub fn rows_to_json_array(rows: &[WitnessRow]) -> String {

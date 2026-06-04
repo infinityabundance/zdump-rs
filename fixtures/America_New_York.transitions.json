@@ -1,0 +1,8 @@
+{"zone_file":"fixtures/America_New_York.tzif","from_year":2035,"to_year":2037,"footer":"EST5EDT,M3.2.0,M11.1.0","transitions":[
+  {"zone_file":"fixtures/America_New_York.tzif","at_utc":"2035-03-11T07:00:00Z","at_unix":2057209200,"before":{"utoff_seconds":-18000,"is_dst":false,"abbr":"EST"},"after":{"utoff_seconds":-14400,"is_dst":true,"abbr":"EDT"}},
+  {"zone_file":"fixtures/America_New_York.tzif","at_utc":"2035-11-04T06:00:00Z","at_unix":2077768800,"before":{"utoff_seconds":-14400,"is_dst":true,"abbr":"EDT"},"after":{"utoff_seconds":-18000,"is_dst":false,"abbr":"EST"}},
+  {"zone_file":"fixtures/America_New_York.tzif","at_utc":"2036-03-09T07:00:00Z","at_unix":2088658800,"before":{"utoff_seconds":-18000,"is_dst":false,"abbr":"EST"},"after":{"utoff_seconds":-14400,"is_dst":true,"abbr":"EDT"}},
+  {"zone_file":"fixtures/America_New_York.tzif","at_utc":"2036-11-02T06:00:00Z","at_unix":2109218400,"before":{"utoff_seconds":-14400,"is_dst":true,"abbr":"EDT"},"after":{"utoff_seconds":-18000,"is_dst":false,"abbr":"EST"}},
+  {"zone_file":"fixtures/America_New_York.tzif","at_utc":"2037-03-08T07:00:00Z","at_unix":2120108400,"before":{"utoff_seconds":-18000,"is_dst":false,"abbr":"EST"},"after":{"utoff_seconds":-14400,"is_dst":true,"abbr":"EDT"}},
+  {"zone_file":"fixtures/America_New_York.tzif","at_utc":"2037-11-01T06:00:00Z","at_unix":2140668000,"before":{"utoff_seconds":-14400,"is_dst":true,"abbr":"EDT"},"after":{"utoff_seconds":-18000,"is_dst":false,"abbr":"EST"}}
+]}

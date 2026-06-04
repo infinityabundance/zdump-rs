@@ -240,11 +240,26 @@ impl Tzif {
         self.types.iter().position(|t| !t.is_dst).unwrap_or(0)
     }
 
-    /// The local-time type in effect at Unix instant `t`, using the explicit transition table only.
+    /// The type in effect at Unix instant `t`.
     ///
-    /// Phase-1 scope: instants beyond the last explicit transition use the last transition's type (the
-    /// POSIX footer would refine far-future projection — that is Phase 2, and `footer_present()` flags it).
+    /// Within the explicit transition table this is a binary-search lookup. **Beyond** the last explicit
+    /// transition (Phase 2) the POSIX footer governs: if it parses, the answer is projected from it (so
+    /// far-future instants now match reference `zdump` instead of being pinned to the last type). Without a
+    /// footer, the last type is used and `beyond_explicit` flags it.
     pub fn observe(&self, t: i64) -> Observation {
+        if self.beyond_explicit(t) {
+            if let Some(f) = &self.footer {
+                if let Some(tz) = crate::posix::parse(f) {
+                    return tz.observe(t);
+                }
+            }
+        }
+        self.observe_explicit(t)
+    }
+
+    /// The explicit-table-only lookup (no footer projection) — used within the recorded range and as the
+    /// fallback when there is no parseable footer.
+    pub fn observe_explicit(&self, t: i64) -> Observation {
         let idx = match self.transitions.binary_search(&t) {
             Ok(i) => Some(i),      // a transition begins exactly at t
             Err(0) => None,        // before the first transition
@@ -262,14 +277,57 @@ impl Tzif {
         }
     }
 
-    /// True when `t` is at or beyond the last explicit transition, so the answer depends on the POSIX
-    /// footer (not yet interpreted) — the witness reports this honestly rather than overclaiming.
+    /// True when `t` is at or beyond the last explicit transition, so the answer is footer-governed (now
+    /// footer-projected in Phase 2 when a footer is present; the field still records the factual provenance
+    /// "this value came from the footer, not the explicit table").
     pub fn beyond_explicit(&self, t: i64) -> bool {
         match self.transitions.last() {
             Some(&last) => t >= last,
             None => true,
         }
     }
+
+    /// Every explicit transition with `lo <= at < hi`, each with the type in effect just before and at it
+    /// (the `zdump -v` analog, restricted to the explicit table). Phase 2.
+    pub fn transitions_in(&self, lo: i64, hi: i64) -> Vec<TransitionRow> {
+        let mut out = Vec::new();
+        for (i, &at) in self.transitions.iter().enumerate() {
+            if at < lo || at >= hi {
+                continue;
+            }
+            let before = if i == 0 {
+                let tt = &self.types[self.pre_first_type()];
+                Observation {
+                    utoff: tt.utoff,
+                    is_dst: tt.is_dst,
+                    abbr: tt.abbr.clone(),
+                }
+            } else {
+                let tt = &self.types[self.type_indices[i - 1] as usize];
+                Observation {
+                    utoff: tt.utoff,
+                    is_dst: tt.is_dst,
+                    abbr: tt.abbr.clone(),
+                }
+            };
+            let at_t = &self.types[self.type_indices[i] as usize];
+            let after = Observation {
+                utoff: at_t.utoff,
+                is_dst: at_t.is_dst,
+                abbr: at_t.abbr.clone(),
+            };
+            out.push(TransitionRow { at, before, after });
+        }
+        out
+    }
+}
+
+/// One explicit transition: the instant, and the local-time type just before and at it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransitionRow {
+    pub at: i64,
+    pub before: Observation,
+    pub after: Observation,
 }
 
 /// What the witness observed at one instant.
