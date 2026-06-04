@@ -147,3 +147,62 @@ fn matches_reference_zdump_or_skips() {
     cross_check("right_America_New_York");
     cross_check("right_Europe_London");
 }
+
+/// Phase 3: the inserted leap seconds zdump-rs renders (`…23:59:60`) must match the `:60` lines reference
+/// `zdump` prints for `right/Etc/UTC`. Auto-skips if `zdump` is absent.
+#[test]
+fn right_leap_seconds_match_zdump_or_skips() {
+    if !zdump_available() {
+        eprintln!("SKIP: reference `zdump` not found — leap golden still pins the table");
+        return;
+    }
+    let abs = std::fs::canonicalize("fixtures/right_Etc_UTC.tzif").unwrap();
+    let out = Command::new("zdump")
+        .args(["-v", "-c", "1972,2020"])
+        .arg(&abs)
+        .output()
+        .expect("run zdump");
+    let text = String::from_utf8_lossy(&out.stdout);
+    // collect the displayed UTC date of every zdump :60 leap line (right-hand side after " UT = ")
+    let mut zdump_leaps: Vec<String> = Vec::new();
+    for line in text.lines() {
+        if let Some(rhs) = line.split(" UT = ").nth(1) {
+            if rhs.contains(":59:60") {
+                let toks: Vec<&str> = rhs.split_whitespace().collect(); // Www Mmm DD 23:59:60 YYYY UTC ...
+                if toks.len() >= 5 {
+                    if let (Some(mon), Ok(day), Ok(year)) = (
+                        month(toks[1]),
+                        toks[2].parse::<i64>(),
+                        toks[4].parse::<i64>(),
+                    ) {
+                        zdump_leaps.push(format!("{year:04}-{mon:02}-{day:02}"));
+                    }
+                }
+            }
+        }
+    }
+    zdump_leaps.sort();
+    assert!(
+        zdump_leaps.len() >= 20,
+        "expected many leap-second lines from zdump, got {}",
+        zdump_leaps.len()
+    );
+
+    let bytes = std::fs::read("fixtures/right_Etc_UTC.tzif").unwrap();
+    let z = parse(&bytes).unwrap();
+    let mine: Vec<String> = z
+        .leaps
+        .iter()
+        .map(|l| zdump_rs::leap::displayed_leap(l.occur, l.corr)[..10].to_string())
+        .collect();
+    for d in &zdump_leaps {
+        assert!(
+            mine.contains(d),
+            "zdump leap second {d} not reproduced by zdump-rs"
+        );
+    }
+    eprintln!(
+        "right/UTC: {} leap-second :60 instants matched reference zdump",
+        zdump_leaps.len()
+    );
+}

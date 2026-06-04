@@ -66,7 +66,7 @@ fn golden_transitions_new_york() {
     let trs = z.transitions_in(lo, hi);
     // reproduce main's transitions JSON shell for the same window
     let mut s = format!(
-        "{{\"zone_file\":{:?},\"from_year\":2035,\"to_year\":2037,\"footer\":{:?},\"transitions\":[\n",
+        "{{\"zone\":{:?},\"from_year\":2035,\"to_year\":2037,\"footer\":{:?},\"transitions\":[\n",
         "fixtures/America_New_York.tzif",
         z.footer.as_deref().unwrap()
     );

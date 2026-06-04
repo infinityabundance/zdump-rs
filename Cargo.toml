@@ -1,6 +1,6 @@
 [package]
 name = "zdump-rs"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.74"
 description = "A bounded, independent Rust TZif witness/inspection companion to zic-rs — reads TZif, renders offset/is_dst/abbreviation at instants (POSIX-footer-projected beyond the last transition), lists transitions, and exposes leap records, as deterministic JSON. NOT a full zdump replacement."

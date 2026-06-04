@@ -17,6 +17,11 @@
 //! - **transition listing** over a year window (the `zdump -v` analog) — `Tzif::transitions_in`
 //! - **expose the leap-second table** in the listing
 //!
+//! Phase 3 (`T23.zdump-witness.3`):
+//! - **named-zone resolution** via `$TZDIR`/`--tzdir` (use `America/New_York`, not just a path) — `zone`
+//! - **`-c lo,hi`** year-cut (the `zdump -c` flag) on the transition listing
+//! - **leap-second `23:59:60` rendering** for `right/` zones (TAI wall rendering near leaps) — `leap`
+//!
 //! ## Explicit NON-claims (guarded as hard as the capability)
 //! - NOT a full `zdump` replacement · NOT exact stdout/stderr parity · NOT all flags
 //! - NOT locale behaviour · NOT a replacement oracle (reference `zdump` stays the oracle)
@@ -28,9 +33,11 @@
 #![forbid(unsafe_code)]
 
 pub mod civil;
+pub mod leap;
 pub mod posix;
 pub mod tzif;
 pub mod witness;
+pub mod zone;
 
 pub use tzif::{parse, Observation, TransitionRow, Tzif};
 pub use witness::WitnessRow;
